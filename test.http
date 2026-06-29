@@ -1,0 +1,110 @@
+### BadWallet API & Payment Service Test Suite
+# Ce fichier contient des exemples de requêtes pour tester tous les endpoints
+# de badwallet-api (port 8080) et de payment-service (port 8081).
+# Supporté par les extensions REST Client (VS Code).
+
+
+## 1. Les End Points
+@walletHost = http://localhost:8080
+@paymentHost = http://localhost:8081
+
+# ==========================================
+# PARTIE 1 : badwallet-api (Port 8080)
+# ==========================================
+
+### 1.1 Seeder la base de données badwallet-api (Async)
+POST {{walletHost}}/api/wallets/seed?numWallets=10&eventsPerWallet=100
+Content-Type: application/json
+
+### 1.2 Créer un nouveau portefeuille
+POST {{walletHost}}/api/wallets
+Content-Type: application/json
+
+{
+  "phoneNumber": "+221779998877",
+  "email": "testclient@gmail.com",
+  "initialBalance": 25000,
+  "code": "WLT-TEST001",
+  "currency": "XOF"
+}
+
+### 1.3 Lister tous les portefeuilles (Paginé)
+GET {{walletHost}}/api/wallets?page=0&size=10
+Content-Type: application/json
+
+### 1.4 Consulter un portefeuille par numéro de téléphone
+GET {{walletHost}}/api/wallets/+221770000003
+Content-Type: application/json
+
+### 1.5 Consulter uniquement le solde à jour
+GET {{walletHost}}/api/wallets/+221770000003/balance
+Content-Type: application/json
+
+### 1.6 Effectuer un Dépôt (CREDIT_CARD, WALLET_TARGET)
+POST {{walletHost}}/api/wallets/1/deposit
+Content-Type: application/json
+
+{
+  "amount": 50000.00,
+  "paymentMethod": "CREDIT_CARD"
+}
+
+### 1.7 Effectuer un Retrait (frais de 1% du montant plafonnés à 5000 CFA)
+POST {{walletHost}}/api/wallets/withdraw
+Content-Type: application/json
+
+{
+  "phoneNumber": "+221770000001",
+  "amount": 10000.00
+}
+
+### 1.8 Effectuer un Transfert entre deux portefeuilles
+POST {{walletHost}}/api/wallets/transfer
+Content-Type: application/json
+
+{
+  "senderPhone": "+221770000001",
+  "receiverPhone": "+221770000002",
+  "amount": 2000.00
+}
+
+### 1.9 Payer une facture du mois encours (ISM, WOYAFAL) via externe api payment-service
+POST {{walletHost}}/api/wallets/pay
+Content-Type: application/json
+
+{
+  "phoneNumber": "+221770000003",
+  "serviceName": "ISM",
+  "amount": 5000.00
+}
+
+### 1.10 Payer des factures spécifiques
+POST {{walletHost}}/api/wallets/pay-factures
+Content-Type: application/json
+
+{
+  "phoneNumber": "+221770000003",
+  "serviceName": "ISM",
+  "factureReferences": ["FAC-ISM-3-1", "FAC-ISM-3-3"]
+}
+
+### 1.11 Consulter l'historique des transactions par téléphone
+GET {{walletHost}}/api/wallets/+221770000003/transactions
+Content-Type: application/json
+
+
+# ==========================================
+# PARTIE 2 : Proxy API dans badwallet-api (Port 8080)
+# ==========================================
+
+### 2.2 Consulter les factures impayées du mois en cours
+GET {{walletHost}}/api/external/factures/WLT-0000003/current
+Content-Type: application/json
+
+### 2.3 Consulter les factures impayées du mois en cours filtrées par unité de paiement (ex: WOYAFAL)
+GET {{walletHost}}/api/external/factures/WLT-0000003/current?unite=WOYAFAL
+Content-Type: application/json
+
+### 2.4 Consulter les factures impayées sur une période
+GET {{walletHost}}/api/external/factures/WLT-0000003/periode?debut=2026-05-01&fin=2026-07-01
+Content-Type: application/json
