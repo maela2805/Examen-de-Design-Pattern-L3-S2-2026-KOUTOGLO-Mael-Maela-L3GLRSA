@@ -1,5 +1,6 @@
 package ism.l3.payment.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -39,6 +40,7 @@ public class Facture {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "client_wallet_id")
+    @JsonIgnore
     private ClientWallet clientWallet;
 
     public Facture(String reference, BigDecimal montant, LocalDate dateFact,
