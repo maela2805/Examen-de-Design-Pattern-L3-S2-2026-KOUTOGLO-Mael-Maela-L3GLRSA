@@ -16,7 +16,6 @@ import java.util.List;
 @Service
 public class FactureServiceImpl implements FactureService {
 
-    // Montants fixes par service (en XOF)
     private static final BigDecimal MONTANT_ISM = new BigDecimal("5000");
     private static final BigDecimal MONTANT_WOYAFAL = new BigDecimal("15000");
 
@@ -32,7 +31,6 @@ public class FactureServiceImpl implements FactureService {
     @Override
     @Transactional
     public void initialiserWallet(String walletCode, String phoneNumber) {
-        // Vérifier si le ClientWallet existe déjà
         if (clientWalletRepository.existsByWalletCode(walletCode)) {
             return;
         }
@@ -40,7 +38,6 @@ public class FactureServiceImpl implements FactureService {
         ClientWallet clientWallet = new ClientWallet(walletCode, phoneNumber);
         clientWalletRepository.save(clientWallet);
 
-        // Générer les factures du mois en cours pour chaque service
         YearMonth moisCourant = YearMonth.now();
         genererFacturesPourMois(clientWallet, moisCourant);
     }
@@ -55,7 +52,6 @@ public class FactureServiceImpl implements FactureService {
         ClientWallet clientWallet = new ClientWallet(walletCode, phoneNumber);
         clientWalletRepository.save(clientWallet);
 
-        // Générer les factures sur N mois passés (du plus ancien au plus récent)
         YearMonth moisCourant = YearMonth.now();
         for (int i = nombreMois - 1; i >= 0; i--) {
             YearMonth mois = moisCourant.minusMonths(i);
@@ -63,28 +59,20 @@ public class FactureServiceImpl implements FactureService {
         }
     }
 
-    /**
-     * Génère une facture par service pour un mois donné si elle n'existe pas déjà.
-     */
     private void genererFacturesPourMois(ClientWallet clientWallet, YearMonth mois) {
         String periode = mois.format(DateTimeFormatter.ofPattern("yyyy-MM"));
         LocalDate dateFact = mois.atDay(1);
 
         for (Unite unite : Unite.values()) {
-            // Éviter les doublons
             if (factureRepository.existsByClientWallet_WalletCodeAndPeriodeAndUnite(
                     clientWallet.getWalletCode(), periode, unite)) {
                 continue;
             }
-
-            // Numéro séquentiel de la facture pour ce wallet + service
             long compteur = factureRepository.countByClientWallet_WalletCodeAndUnite(
                     clientWallet.getWalletCode(), unite) + 1;
 
-            // Extraire le numéro du wallet : "WLT-0000003" → "3"
             String walletNumero = extraireNumeroWallet(clientWallet.getWalletCode());
 
-            // Format : FAC-ISM-3-1
             String reference = String.format("FAC-%s-%s-%d", unite.name(), walletNumero, compteur);
 
             BigDecimal montant = getMontantParUnite(unite);
@@ -127,10 +115,7 @@ public class FactureServiceImpl implements FactureService {
         }
     }
 
-    // ─── Helpers ───────────────────────────────────────────────────────────────
-
     private String extraireNumeroWallet(String walletCode) {
-        // "WLT-0000003" → supprime les zéros → "3"
         return walletCode.replace("WLT-", "").replaceFirst("^0+(?!$)", "");
     }
 
